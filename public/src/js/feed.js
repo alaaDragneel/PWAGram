@@ -31,6 +31,12 @@ shareImageButton.addEventListener('click', openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
 
+function clearCards () {
+     while (sharedMomentsArea.hasChildNodes()) {
+         sharedMomentsArea.removeChild(sharedMomentsArea.lastChild)
+     }
+}
+
 function createCard() {
     var cardWrapper = document.createElement('div');
     cardWrapper.className = 'shared-moment-card mdl-card mdl-shadow--2dp';
@@ -49,15 +55,53 @@ function createCard() {
     cardSupportingText.className = 'mdl-card__supporting-text';
     cardSupportingText.textContent = 'In San Francisco';
     cardSupportingText.style.textAlign = 'center';
+    // var cardSaveBtn = document.createElement('button');
+    // cardSaveBtn.textContent = 'save';
+    // cardSaveBtn.addEventListener('click', onSaveBtnClick)
+    // cardSupportingText.appendChild(cardSaveBtn);
     cardWrapper.appendChild(cardSupportingText);
     componentHandler.upgradeElement(cardWrapper);
     sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch('https://httpbin.org/get')
+var url = 'https://httpbin.org/get';
+var  networkDataRecieve = false;
+
+fetch(url)
     .then(function(res) {
         return res.json();
     })
     .then(function(data) {
+        networkDataRecieve = true;
+        console.log('From Web: ', data);
+        clearCards();
         createCard();
+    })
+    .catch(function (err) {
+        console.log(err);
     });
+
+if ('caches' in window) {
+    caches.match(url)
+        .then(function (response) {
+            if (response) {
+                return response.json();
+            }
+        })
+        .then(function (data) {
+            if (! networkDataRecieve) {
+                console.log('From Cache: ', data);
+                clearCards();
+                createCard();
+            }
+        })
+}
+// function onSaveBtnClick(event) {
+//     if ('caches' in window) {
+//         caches.open('user-requested')
+//             .then(function (cache) {
+//                 cache.add('https://httpbin.org/get')
+//                 cache.add('/src/images/irre.jpg')
+//             });
+//     }
+// }
