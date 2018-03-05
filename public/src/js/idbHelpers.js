@@ -4,6 +4,10 @@ var dbPromise = idb.open('alaa-gram-store', 1, function (db) {
         // posts == table
         db.createObjectStore('posts', { keyPath: 'id' });
     }
+    if (! db.objectStoreNames.contains('sync-posts')) {
+        // sync-posts == table
+        db.createObjectStore('sync-posts', { keyPath: 'id' });
+    }
 });
 
 function writeData(st, data) {

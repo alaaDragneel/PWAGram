@@ -146,3 +146,42 @@ self.addEventListener('fetch', function (event) {
 //     // console.log('[Service Worker] Fetching Somethings ...', event);
 
 // });
+
+self.addEventListener('sync', function (event) {
+    console.log('[Server Worker] Background Syncing', event);
+    if (event.tag === 'sync-new-post') {
+        console.log('[Server Worker] Syncing New Post');
+        event.waitUntil(
+            readAllData('sync-posts')
+                .then(function (data) {
+                    for (var dt of data) {
+                        fetch('https://us-central1-alaa-gram.cloudfunctions.net/storePostData', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                id: dt.id,
+                                title: dt.title,
+                                location: dt.location,
+                                image: 'https://firebasestorage.googleapis.com/v0/b/alaa-gram.appspot.com/o/Danganronpa-V3-Key-Art.jpg?alt=media&token=9925e34d-fa4b-4170-ad64-ff0e6136401e'
+                            })
+                        })
+                        .then(function (res) {
+                            console.log('[Service Worker] Sending Data: ', res);
+                            if (res.ok) {
+                                res.json()
+                                    .then(function (resData) {
+                                        deleteItemFromData('sync-posts', resData.id);
+                                    });
+                            }
+                        })
+                        .catch(function (err) {
+                            console.log('Error While Sending The Data: ', err);
+                        });
+                    }
+                })
+        );
+    }
+});
