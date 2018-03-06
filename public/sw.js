@@ -185,3 +185,61 @@ self.addEventListener('sync', function (event) {
         );
     }
 });
+
+self.addEventListener('notificationclick', function (event) {
+    var notification = event.notification;
+    var action = event.action;
+    console.log('Notification: ', notification);
+
+    // notification id define in app.js === 'confirm'
+    if(action === 'confirm') {
+        console.log('Confirm Was Chosen');
+        notification.close();
+    } else {
+        console.log('Action: ', action);
+        event.waitUntil(
+            clients.matchAll()
+                .then(function (clis) {
+                    var client = clis.find(function (c) {
+                        return c.visibilityState = 'visible';
+                    });
+
+                    if (client !== undefined) {
+                        client.navigate(notification.data.url); // found in push event on data option
+                        client.focus();
+                    } else {
+                        clients.openWindow(notification.data.url); // found in push event on data option
+                    }
+                    notification.close();
+                })
+        );
+    }
+});
+
+self.addEventListener('notificationclose', function (event) {
+    console.log('Notification Was Closed', event);
+});
+
+self.addEventListener('push', function (event) {
+    console.log('[Server Worker] Push Notification Received...', event);
+
+    var data = { title: 'New!', content: 'Something New Happened!', openUrl: '/' };
+    if (event.data) {
+        data = JSON.parse(event.data.text());
+    }
+
+    var options = {
+        body: data.content,
+        // not supported in all browsers but some support in devices Should Not Be Core Features
+        icon: '/src/images/icons/app-icon-144x144.png',
+        badge: '/src/images/icons/app-icon-96x96.png',
+        data: {
+            url: data.openUrl
+        }
+    };
+
+    event.waitUntil(
+       self.registration.showNotification(data.title, options)
+    );
+});
+
