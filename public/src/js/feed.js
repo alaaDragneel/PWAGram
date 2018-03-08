@@ -5,11 +5,63 @@ var closeCreatePostModalButton = document.querySelector('#close-create-post-moda
 var form = document.querySelector('form');
 var titleInput = document.querySelector('#title');
 var locationInput = document.querySelector('#location');
-var form = document.querySelector('form');
+var videoPlayer = document.querySelector('#player');
+var canvas = document.querySelector('#canvas');
+var captureBtn = document.querySelector('#capture-btn');
+var imagePicker = document.querySelector('#image-picker');
+var imagePickerArea = document.querySelector('#pick-image');
+var picture;
+function initMedia() {
+    if (!('mediaDevices' in navigator)) {
+        navigator.mediaDevices = {};
+    }
+
+    if (!('getUserMedia' in navigator.mediaDevices)) {
+        navigator.mediaDevices.getUserMedia = function (constraints) {
+            var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            
+
+            if (!getUserMedia) {
+                return Promise.reject(new Error('getUserMedia Is Not Implemented!'));
+            }
+
+            return new Promise(function (resolve, reject) {
+                getUserMedia.call(navigator, constraints, resolve, reject);
+            });
+        };
+    }
+    // { video: true, audio: true } => constants
+    navigator.mediaDevices.getUserMedia({video: true})
+        .then(function (stream) {
+            videoPlayer.srcObject = stream;
+            videoPlayer.style.display = 'block';
+        })
+        .catch(function (err) {
+            imagePickerArea.style.display = 'block';
+        });
+}
+
+captureBtn.addEventListener('click', function (event) {
+    canvas.style.display = 'block';
+    videoPlayer.style.display = 'none';
+    captureBtn.style.display = 'none';
+    var context = canvas.getContext('2d');
+    context.drawImage(videoPlayer, 0, 0, canvas.width, videoPlayer.videoHeight / (videoPlayer.videoWidth / canvas.width));
+    videoPlayer.srcObject.getVideoTracks().forEach(function (track) {
+        track.stop();
+    });
+
+    picture = dataURItoBlob(canvas.toDataURL());
+});
+
+// imagePicker.addEventListener('change', function (event) {
+//    picture = event.target.files[0];
+// });
 
 function openCreatePostModal() {
-
+    captureBtn.style.display = 'block';
     createPostArea.style.transform = 'translateY(0)';
+    initMedia();
     // check if the prompt is found NOTE can Found In app.js
     if (deferredPrompt) {
         // prompt
@@ -30,6 +82,9 @@ function openCreatePostModal() {
 
 function closeCreatePostModal() {
     createPostArea.style.transform = 'translateY(100vh)';
+    videoPlayer.style.display = 'none';
+    imagePickerArea.style.display = 'none';
+    canvas.style.display = 'none';
 }
 
 shareImageButton.addEventListener('click', openCreatePostModal);
@@ -75,7 +130,7 @@ function updateUI(data) {
     }
 }
 
-var url = 'https://alaa-gram.firebaseio.com/posts.json';
+var url = 'https://my-gram.firebaseio.com/posts.json';
 var networkDataRecieve = false;
 
 fetch(url)
@@ -135,23 +190,21 @@ if ('indexedDB' in window) {
 // }
 
 function sendData() {
-    fetch('https://us-central1-alaa-gram.cloudfunctions.net/storePostData', {
+    var id = new Date().toISOString();
+    var postData = new FormData();
+    postData.append('id', id);
+    postData.append('title', titleInput.value);
+    postData.append('location', locationInput.value);
+    postData.append('file', picture, id + '.png');
+
+    fetch('https://us-central1-my-gram.cloudfunctions.net/storePostData', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            id: new Date().toISOString(),
-            title: titleInput.value,
-            location: locationInput.value,
-            image: 'https://firebasestorage.googleapis.com/v0/b/alaa-gram.appspot.com/o/Danganronpa-V3-Key-Art.jpg?alt=media&token=9925e34d-fa4b-4170-ad64-ff0e6136401e'
-        })
+        body: postData
     })
-    .then(function (res) {
-        console.log('Send Data: ', res);
-        updateUI();
-    });
+        .then(function (res) {
+            console.log('Send Data: ', res);
+            updateUI();
+        });
 }
 
 form.addEventListener('submit', function (event) {
@@ -169,7 +222,8 @@ form.addEventListener('submit', function (event) {
                 var post = {
                     id: new Date().toISOString(),
                     title: titleInput.value,
-                    location: locationInput.value
+                    location: locationInput.value,
+                    picture: picture
                 };
                 writeData('sync-posts', post)
                     .then(function () {

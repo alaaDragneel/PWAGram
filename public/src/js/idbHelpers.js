@@ -1,5 +1,5 @@
-// alaa-gram-store ==  database
-var dbPromise = idb.open('alaa-gram-store', 1, function (db) {
+// my-gram-store ==  database
+var dbPromise = idb.open('my-gram-store', 1, function (db) {
     if (! db.objectStoreNames.contains('posts')) {
         // posts == table
         db.createObjectStore('posts', { keyPath: 'id' });
@@ -67,4 +67,16 @@ function urlBase64ToUint8Array(base64String) {
         outputArray[i] = rawData.charCodeAt(i);
     }
     return outputArray;
+}
+
+function dataURItoBlob(dataURI) {
+    var byteString = atob(dataURI.split(',')[1]);
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    var ab = new ArrayBuffer(byteString.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    var blob = new Blob([ab], {type: mimeString});
+    return blob;
 }

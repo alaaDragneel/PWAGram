@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/idbHelpers.js');
 
-var CACHE_STATIC_NAME = 'static-v1';
+var CACHE_STATIC_NAME = 'static-v13';
 var CACHE_DYNAMIC_NAME = 'dynamic-v1';
 var STATIC_FILES = [
     '/',
@@ -10,6 +10,7 @@ var STATIC_FILES = [
     '/src/js/app.js',
     '/src/js/feed.js',
     '/src/js/idb.js',
+    '/src/js/idbHelpers.js',
     '/src/js/promise.js',
     '/src/js/fetch.js',
     '/src/js/material.min.js',
@@ -74,7 +75,7 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
     // cache than network strategy
-    var url = 'https://alaa-gram.firebaseio.com/posts';
+    var url = 'https://my-gram.firebaseio.com/posts';
     if (event.request.url.indexOf(url) > -1) {
         event.respondWith(
             fetch(event.request)
@@ -155,18 +156,15 @@ self.addEventListener('sync', function (event) {
             readAllData('sync-posts')
                 .then(function (data) {
                     for (var dt of data) {
-                        fetch('https://us-central1-alaa-gram.cloudfunctions.net/storePostData', {
+                        var postData = new FormData();
+                        postData.append('id', dt.id);
+                        postData.append('title', dt.title);
+                        postData.append('location', dt.location);
+                        postData.append('file', dt.picture, dt.id + '.png');
+                        console.log('dt', postData.get('id'), postData.get('title'), postData.get('location'), postData.get('file'));
+                        fetch('https://us-central1-my-gram.cloudfunctions.net/storePostData', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                id: dt.id,
-                                title: dt.title,
-                                location: dt.location,
-                                image: 'https://firebasestorage.googleapis.com/v0/b/alaa-gram.appspot.com/o/Danganronpa-V3-Key-Art.jpg?alt=media&token=9925e34d-fa4b-4170-ad64-ff0e6136401e'
-                            })
+                            body: postData
                         })
                         .then(function (res) {
                             console.log('[Service Worker] Sending Data: ', res);

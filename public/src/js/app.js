@@ -74,7 +74,7 @@ function configrePushSub() {
             }
         })
         .then(function (newSub) {
-            return fetch('https://alaa-gram.firebaseio.com/subscriptions.json', {
+            return fetch('https://my-gram.firebaseio.com/subscriptions.json', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
