@@ -11,6 +11,32 @@ var captureBtn = document.querySelector('#capture-btn');
 var imagePicker = document.querySelector('#image-picker');
 var imagePickerArea = document.querySelector('#pick-image');
 var picture;
+var locationBtn = document.querySelector('#location-btn');
+var locationLoader = document.querySelector('#location-loader');
+var fetchLocation = { lat: 0, lng: 0 };
+
+locationBtn.addEventListener('click', function (event) {
+    if (!('geolocation' in navigator)) {
+        return;
+    }
+
+    locationBtn.style.display = 'none';
+    locationLoader.style.display = 'block';
+
+    navigator.geolocation.getCurrentPosition(function (position) {
+        locationBtn.style.display = 'inline';
+        locationLoader.style.display = 'none';
+        fetchLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+        locationInput.value = "In Imbaba";
+        document.querySelector('#manual-location').classList.add('is-focused');
+    }, function (err) {
+        console.log(err);
+        locationBtn.style.display = 'inline';
+        locationLoader.style.display = 'none';
+        fetchLocation = { lat: 0, lng: 0 };
+    }, { timeout: 7000 });
+});
+
 function initMedia() {
     if (!('mediaDevices' in navigator)) {
         navigator.mediaDevices = {};
@@ -41,6 +67,12 @@ function initMedia() {
         });
 }
 
+function initLocation() {   
+    if (! ('geolocation' in navigator)) {
+        locationBtn.style.display = 'none';
+    }
+}
+
 captureBtn.addEventListener('click', function (event) {
     canvas.style.display = 'block';
     videoPlayer.style.display = 'none';
@@ -54,14 +86,16 @@ captureBtn.addEventListener('click', function (event) {
     picture = dataURItoBlob(canvas.toDataURL());
 });
 
-// imagePicker.addEventListener('change', function (event) {
-//    picture = event.target.files[0];
-// });
+imagePicker.addEventListener('change', function (event) {
+   picture = event.target.files[0];
+});
 
 function openCreatePostModal() {
-    captureBtn.style.display = 'block';
-    createPostArea.style.transform = 'translateY(0)';
+    setTimeout(function () {
+        createPostArea.style.transform = 'translateY(0)';
+    }, 1);
     initMedia();
+    initLocation();
     // check if the prompt is found NOTE can Found In app.js
     if (deferredPrompt) {
         // prompt
@@ -81,10 +115,20 @@ function openCreatePostModal() {
 }
 
 function closeCreatePostModal() {
-    createPostArea.style.transform = 'translateY(100vh)';
     videoPlayer.style.display = 'none';
     imagePickerArea.style.display = 'none';
     canvas.style.display = 'none';
+    captureBtn.style.display = 'block';
+    locationBtn.style.display = 'inline';
+    locationLoader.style.display = 'none';
+    if (videoPlayer.srcObject) {
+        videoPlayer.srcObject.getVideoTracks().forEach(function (track) {
+            track.stop();
+        });
+    }
+    setTimeout(function () {
+        createPostArea.style.transform = 'translateY(100vh)';
+    }, 1);
 }
 
 shareImageButton.addEventListener('click', openCreatePostModal);
@@ -196,6 +240,8 @@ function sendData() {
     postData.append('title', titleInput.value);
     postData.append('location', locationInput.value);
     postData.append('file', picture, id + '.png');
+    postData.append('rawLocationLat', fetchLocation.lat);
+    postData.append('rawLocationLng', fetchLocation.lng);
 
     fetch('https://us-central1-my-gram.cloudfunctions.net/storePostData', {
         method: 'POST',
@@ -223,7 +269,8 @@ form.addEventListener('submit', function (event) {
                     id: new Date().toISOString(),
                     title: titleInput.value,
                     location: locationInput.value,
-                    picture: picture
+                    picture: picture,
+                    rawLocation: fetchLocation
                 };
                 writeData('sync-posts', post)
                     .then(function () {

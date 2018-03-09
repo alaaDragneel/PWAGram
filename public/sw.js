@@ -161,7 +161,8 @@ self.addEventListener('sync', function (event) {
                         postData.append('title', dt.title);
                         postData.append('location', dt.location);
                         postData.append('file', dt.picture, dt.id + '.png');
-                        console.log('dt', postData.get('id'), postData.get('title'), postData.get('location'), postData.get('file'));
+                        postData.append('rawLocationLat', dt.rawLocation.lat);
+                        postData.append('rawLocationLng', dt.rawLocation.lng);
                         fetch('https://us-central1-my-gram.cloudfunctions.net/storePostData', {
                             method: 'POST',
                             body: postData
