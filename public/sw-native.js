@@ -167,18 +167,18 @@ self.addEventListener('sync', function (event) {
                             method: 'POST',
                             body: postData
                         })
-                        .then(function (res) {
-                            console.log('[Service Worker] Sending Data: ', res);
-                            if (res.ok) {
-                                res.json()
-                                    .then(function (resData) {
-                                        deleteItemFromData('sync-posts', resData.id);
-                                    });
-                            }
-                        })
-                        .catch(function (err) {
-                            console.log('Error While Sending The Data: ', err);
-                        });
+                            .then(function (res) {
+                                console.log('[Service Worker] Sending Data: ', res);
+                                if (res.ok) {
+                                    res.json()
+                                        .then(function (resData) {
+                                            deleteItemFromData('sync-posts', resData.id);
+                                        });
+                                }
+                            })
+                            .catch(function (err) {
+                                console.log('Error While Sending The Data: ', err);
+                            });
                     }
                 })
         );
@@ -191,7 +191,7 @@ self.addEventListener('notificationclick', function (event) {
     console.log('Notification: ', notification);
 
     // notification id define in app.js === 'confirm'
-    if(action === 'confirm') {
+    if (action === 'confirm') {
         console.log('Confirm Was Chosen');
         notification.close();
     } else {
@@ -238,7 +238,6 @@ self.addEventListener('push', function (event) {
     };
 
     event.waitUntil(
-       self.registration.showNotification(data.title, options)
+        self.registration.showNotification(data.title, options)
     );
 });
-

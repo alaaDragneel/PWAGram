@@ -254,6 +254,8 @@ function sendData() {
 }
 
 form.addEventListener('submit', function (event) {
+    console.log('submitted');
+    
     event.preventDefault();
 
     if (titleInput.value.trim() === '' || locationInput.value.trim() === '') {
@@ -272,6 +274,8 @@ form.addEventListener('submit', function (event) {
                     picture: picture,
                     rawLocation: fetchLocation
                 };
+                console.log(post);
+                
                 writeData('sync-posts', post)
                     .then(function () {
                         return sw.sync.register('sync-new-post');
